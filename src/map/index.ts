@@ -231,9 +231,9 @@ export default {
                 url : 'https://a.tile.openstreetmap.org/'
             }),
             shouldAnimate: true,
-            animation: false,
+            animation: true,
             fullscreenButton: false,
-            timeline: false,
+            timeline: true,
             geocoder: false, // toolbar
             homeButton: false, // toolbar
             baseLayerPicker: false, // toolbar

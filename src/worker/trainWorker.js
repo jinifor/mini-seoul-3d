@@ -4,6 +4,7 @@ import map from '../map';
 import {getTodayWithTime, Period, plus9hours} from "../utils/datetime.ts";
 import {SampledStationProperty} from "../utils/SampledStationProperty.ts";
 import {SampledBearingProperty} from "../utils/SampledBearingProperty.ts";
+import {saveJSON} from "../utils/file.js";
 
 const accDistance = 0.4;
 const sampleUnitSec = 1;

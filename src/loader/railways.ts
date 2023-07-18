@@ -10,6 +10,12 @@ export default (viewer: Viewer) => {
         {   "line": "line1",
             "file":'../dataTmp/railway_1.geojson'
         },
+        {   "line": "line2",
+            "file":'../dataTmp/railway_2.geojson'
+        },
+        {   "line": "line3",
+            "file":'../dataTmp/railway_3.geojson'
+        },
         {   "line": "line7",
             "file":'../dataTmp/railway_7.geojson'
         }

@@ -57,9 +57,10 @@ const getVelocity = (accDistance: number, noAccDistance: number, elapsedSec: num
 }
 
 export default (railwaysInfo: RailwayInfo[], timetablesInfo: TimetablesInfo[]) => {
-    const lines = ["line1", "line2", "line3", "line4", "line5", "line6", "line7", "line8"]
+    const lines = ["line1", "line2", "line7"]
 
     const dataSet: DataSet[] = [];
+
 
     lines.map(line => {
         const data: DataSet = {};
@@ -75,19 +76,57 @@ export default (railwaysInfo: RailwayInfo[], timetablesInfo: TimetablesInfo[]) =
     return dataSet;
 }
 
-export function trainsWorker(dataSet: DataSet[]) {
+export function trainsWorker(data: DataSet) {
 
-    for(let data of dataSet) {
-        const line = data.line;
-        const trains = data.trains;
-        const railways = data.railways;
+    // @ts-ignore
+    const worker = new Worker(new URL('../worker/trainWorker2.js', import.meta.url), {
+        type: 'module',
+    })
+    const datasource = map.findDataSourceByName(map.DATASOURCE_NAME.TRAIN);
 
-        if(!trains) continue;
+    worker.onmessage = function (event) {
+        console.log("main 시작", new Date())
+        const entities = event.data.splice(50,100);
+        entities.map(entity => {
+            const entityPosition =  new Cesium.SampledPositionProperty();
+            const entityStation = new SampledStationProperty();
+            const entityBearing = new SampledBearingProperty();
 
-        for(let train of trains) {
-            if(railways && line) makeTrainEntity(line, train, railways);
-        }
-    }
+            entity.positions.map(position => {
+                const time = Cesium.JulianDate.fromDate(new Date(position.time));
+                const point = Cesium.Cartesian3.fromDegrees(position.location[0], position.location[1])
+                entityPosition.addSample(time, point);
+            })
+
+            entity.stations.map(station => {
+                entityStation.addSample( new Period(station.startDatetime, station.endDatetime), station.info);
+            })
+
+            entity.angles.map(angle => {
+                entityBearing.addSample( new Period(angle.startDatetime, angle.endDatetime), angle.angle);
+            })
+            const newEntity = {
+                id: entity.trainNo,
+                position: entityPosition,
+                orientation: new Cesium.VelocityOrientationProperty(entityPosition),
+                description: {
+                    'station': entityStation,
+                    'bearing': entityBearing,
+                },
+                model: {
+                    uri: `./data/${line}.glb`,
+                    scale: new Cesium.CallbackProperty(map.getSizeByZoom, false),
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+                },
+            };
+            datasource.entities.add(newEntity);
+        });
+        console.log("main 끝", new Date())
+
+    };
+
+    const { line, trains, railways } = data;
+    worker.postMessage({ line, trains, railways });
 }
 
 const makeTrainEntity = (line: string, train: Train, railways: Railway[]) => {

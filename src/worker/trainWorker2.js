@@ -80,7 +80,7 @@ function makeTrainEntity (line, train, railways) {
             plus9hours(arrive);
             plus9hours(depart);
             stations.push ({
-                arrive, depart,
+                startDatetime: arrive, endDatetime: depart,
                 info: `현재역: ${startNode.name}`
             })
         }
@@ -92,6 +92,10 @@ function makeTrainEntity (line, train, railways) {
         // 계산 시작
         const diff = endDatetime.getTime() - startDatetime.getTime();
         const totalElapsedSec = Math.floor(diff / 1000);
+
+        // console.log(line, startNode, endNode)
+        // console.log(railwayCoords)
+        // console.log(railwayCoords.length)
 
         const feature = Turf.lineString(railwayCoords)
         const reversedLine = [...railwayCoords].reverse();
@@ -203,6 +207,7 @@ function makeTrainEntity (line, train, railways) {
 }
 
 onmessage = function (event) {
+    console.log("worker onmessage", new Date())
     const { line, trains, railways } = event.data;
     if(!trains) return;
 
@@ -214,6 +219,8 @@ onmessage = function (event) {
             if(entity) entities.push(entity)
         }
     }
+    console.log("worker end", new Date())
+
 
     // 결과물을 메인 스레드로 보냄
     postMessage(entities); //TODO
