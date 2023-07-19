@@ -28,10 +28,6 @@ function getDuration (distance, velocity) {
     return distance / velocity; //h
 }
 
-function getDisplacement(accVelocity, sec) {
-
-}
-
 function makeTrainEntity (line, train, railways) {
     const timetable = train.timetables;
 
@@ -107,7 +103,6 @@ function makeTrainEntity (line, train, railways) {
         const velocity = getVelocity(accDistance*2, noAccDistance, totalElapsedSec); // km/h
         // 등가속도 구간괴 등속도 구간의 소요시간
         const accElapsedSec = getDuration(accDistance, velocity/2) * 60 * 60 // 평균속도 velocity/2 (0 ~ velocity)
-        const noAccElapsedSec = endDatetime.getTime() * 1000 - startDatetime.getTime() * 1000 - accElapsedSec * 1000 * 2;
         // 가속도
         const accVelocity = ((velocity * 1000 /3600) / accElapsedSec) / 1000 * 3600; // km/h^2
 
@@ -171,49 +166,32 @@ function makeTrainEntity (line, train, railways) {
             distance = (velocity / 3600) * sec + (1/2) * (-accVelocity) * (sec * sec) / 3600; //km
         }
 
-        // - 3 구간 구하기
-        // i = 0;
-        // sec = i++ * sampleUnitSec;
-        // distance = (1 / 2) * accVelocity * (((sec) * (sec)) / 3600);
-        // const tmpPositions = [];
-        // const reversedAccDownFeature = Turf.lineSlice(Turf.point(endPoi), Turf.point(accDownStartPoi), reversedFeature);
-        // while (distance < accDistance) {
-        //     tmpPositions.push({
-        //         time: new Date(endDatetime.getTime() - sec * 1000),
-        //         location: Turf.getCoord(Turf.along(reversedAccDownFeature, distance)),
-        //     });
-        //     sec = i++ * sampleUnitSec;
-        //     distance = (1 / 2) * accVelocity * (((sec) * (sec)) / 3600); //km
-        // }
-        //
-        // positions.push(...tmpPositions.reverse());
-
         // 4. 각도 변화  // TODO 여전히 속도가 좀 느리긴 함
-        // const length = positions.length;
-        // const angles = new Array(length - 1); // 최대 크기 설정
-        //
-        // let lastAngle = 0;
-        // for (let p = 0; p < length - 1; p++) {
-        //     const position = positions[p];
-        //     const nextPosition = positions[p + 1];
-        //     lastAngle = Turf.bearing(Turf.point(position.location), Turf.point(nextPosition.location));
-        //     angles[p] = {
-        //         startDatetime: position.time,
-        //         endDatetime: nextPosition.time,
-        //         lastAngle,
-        //     };
-        // }
-        //
-        // if (timetable[index + 2]) {
-        //     const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
-        //     plus9hours(endNodeDepartDatetime);
-        //
-        //     angles.push({
-        //         startDatetime: endDatetime,
-        //         endDatetime: endNodeDepartDatetime,
-        //         lastAngle,
-        //     });
-        // }
+        const length = positions.length;
+        const angles = new Array(length - 1); // 최대 크기 설정
+
+        let lastAngle = 0;
+        for (let p = 0; p < length - 1; p++) {
+            const position = positions[p];
+            const nextPosition = positions[p + 1];
+            lastAngle = Turf.bearing(Turf.point(position.location), Turf.point(nextPosition.location));
+            angles[p] = {
+                startDatetime: position.time,
+                endDatetime: nextPosition.time,
+                lastAngle,
+            };
+        }
+
+        if (timetable[index + 2]) {
+            const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
+            plus9hours(endNodeDepartDatetime);
+
+            angles.push({
+                startDatetime: endDatetime,
+                endDatetime: endNodeDepartDatetime,
+                lastAngle,
+            });
+        }
     }
 
     return {
