@@ -39,8 +39,7 @@ const setKorDateTime = (timeStr: string | void) => {
     // ex time "08:10:05"
     const today = timeStr? getTodayWithTime(timeStr) : new Date();
     plus9hours(today);
-    const julianDate = getJulianDate(today);
-    viewer.clock.currentTime = julianDate;
+    viewer.clock.currentTime = getJulianDate(today);
 }
 
 const getSizeByZoom = () => {
@@ -180,7 +179,6 @@ const setTrainHoverHandler = (set: boolean, callback: (entity: Cesium.Entity | n
 }
 
 const setTrainClickHandler = (set: boolean, cameraMode: string, callback: (entity: Cesium.Entity | null, bearing: number | null) => void) => {
-    const map = this;
     if(set) {
         if(!entityClickHandler) {
             entityClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -231,9 +229,9 @@ export default {
                 url : 'https://a.tile.openstreetmap.org/'
             }),
             shouldAnimate: true,
-            animation: true,
+            animation: false,
             fullscreenButton: false,
-            timeline: true,
+            timeline: false,
             geocoder: false, // toolbar
             homeButton: false, // toolbar
             baseLayerPicker: false, // toolbar
@@ -249,21 +247,10 @@ export default {
             showRenderLoopErrors: false,
         });
 
-        try {
-            const imageryLayer = viewer.imageryLayers.addImageryProvider(
-                new Cesium.OpenStreetMapImageryProvider({
-                    url : 'https://a.tile.openstreetmap.org/'
-                })
-            );
-            await viewer.zoomTo(imageryLayer);
-        } catch (error) {
-            console.log(error);
-        }
-
         // viewer.scene.primitives.add(
         //     new Cesium.Cesium3DTileset({
         //         // @ts-ignore
-        //         url: `https://175.197.92.213:10210/ngii-buildings/3DTiles_20230613/su/tileset.json`,
+        //         url: `http://175.197.92.213:10210/ngii-buildings/3DTiles_20230613/su/tileset.json`,
         //         customShader: new Cesium.CustomShader({
         //             lightingModel: Cesium.LightingModel.UNLIT,
         //         }),

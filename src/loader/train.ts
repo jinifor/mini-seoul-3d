@@ -1,8 +1,6 @@
 import * as Cesium from 'cesium';
 // @ts-ignore
 import {Cartesian3, Entity, Viewer, JulianDate} from '@types/cesium';
-import * as Turf from '@turf/turf';
-import {Units} from "@turf/helpers";
 import {Railway, RailwayInfo, Train, TimetablesInfo} from "../data/types";
 
 import map from '../map'
