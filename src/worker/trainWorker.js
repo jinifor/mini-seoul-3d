@@ -1,7 +1,7 @@
 import * as Turf from '@turf/turf';
 
-const accDistance = 0.25;
-const sampleUnitSec = 3;
+const accDistance = 0.1;
+const sampleUnitSec = 2;
 const options = {units: 'kilometers'};
 
 function getTodayWithTime (timeString) {
@@ -14,14 +14,6 @@ function getTodayWithTime (timeString) {
 
 function plus9hours (jsDate) {
     jsDate.setHours(jsDate.getHours() + 9);
-}
-
-function getDistance (start, end) {
-    start = Turf.getCoord(start);
-    end = Turf.getCoord(end)
-    const from = Turf.point(start);
-    const to = Turf.point(end);
-    return Math.round(Turf.distance(from, to, {units: 'kilometers'}) * 1000) / 1000
 }
 
 function getVelocity (accDistance, noAccDistance, elapsedSec) {
@@ -37,22 +29,23 @@ function getDuration (distance, velocity) {
 }
 
 function makeTrainEntity (line, train, railways) {
-
     const timetable = train.timetables;
 
     const positions = [];
     const stations = [];
     const angles = [];
 
-    let noRailway = false;
-    //2. 시간과 속도, 가속도 계산
-    timetable.forEach((node, index, array) => {
+    for (let index = 0; index < timetable.length - 1; index++) {
 
-        const startNode = node;
-        const endNode = array[index+1];
-        if(!endNode) return;
+        const startNode = timetable[index];
+        const endNode = timetable[index + 1];
 
-        const railway = railways?.find(railway => railway.startNodeId===startNode.node && railway.endNodeId===endNode.node);
+        if (!endNode) break;
+
+        const railway = railways?.find(
+            (railway) =>
+                railway.startNodeId === startNode.node && railway.endNodeId === endNode.node
+        );
 
         const railwayCoords = railway?.coordinates;
 
@@ -109,8 +102,8 @@ function makeTrainEntity (line, train, railways) {
         // 최고속도
         const velocity = getVelocity(accDistance*2, noAccDistance, totalElapsedSec); // km/h
         // 등가속도 구간괴 등속도 구간의 소요시간
-        const noAccElapsedSec = noAccDistance/velocity * 60 * 60; // s
         const accElapsedSec = getDuration(accDistance, velocity/2) * 60 * 60 // 평균속도 velocity/2 (0 ~ velocity)
+        const noAccElapsedSec = endDatetime.getTime() * 1000 - startDatetime.getTime() * 1000 - accElapsedSec * 1000 * 2;
         // 가속도
         const accVelocity = ((velocity * 1000 /3600) / accElapsedSec) / 1000 * 3600; // km/h^2
 
@@ -138,14 +131,17 @@ function makeTrainEntity (line, train, railways) {
 
         // - 2 구간 구하기
         const vertexList = Turf.getCoords(noAccFeature);
-        let lastPosition = positions[positions.length - 1]
+        let lastPosition = positions[positions.length - 1];
 
-        const velocityInSeconds = velocity / 3600; // velocity를 초 단위로 변환
+        const velocityInSec = velocity / 3600; // velocity를 초 단위로 변환
 
         for (let i = 0; i < vertexList.length; i++) {
             const vertex = vertexList[i];
-            const distance = Turf.distance(Turf.point(lastPosition.location), Turf.point(vertex));
-            const sec = distance / velocityInSeconds;
+            const distance = Turf.distance(
+                Turf.point(lastPosition.location),
+                Turf.point(vertex)
+            );
+            const sec = distance / velocityInSec;
 
             positions.push({
                 time: new Date(lastPosition.time.getTime() + sec * 1000),
@@ -153,22 +149,22 @@ function makeTrainEntity (line, train, railways) {
             });
         }
 
-        positions.push({
-            time: new Date(startDatetime.getTime()+ (accElapsedSec + noAccElapsedSec) * 1000),
-            location: accDownStartPoi
-        })
+        // positions.push({
+        //     time: new Date(startDatetime.getTime() + (accElapsedSec + noAccElapsedSec) * 1000),
+        //     location: accDownStartPoi,
+        // });
 
         // - 3 구간 구하기
         i = 0;
         sec = i++ * sampleUnitSec;
-        distance =  (1 / 2) * accVelocity * (((sec) * (sec)) / 3600);
+        distance = (1 / 2) * accVelocity * (((sec) * (sec)) / 3600);
         const tmpPositions = [];
         const reversedAccDownFeature = Turf.lineSlice(Turf.point(endPoi), Turf.point(accDownStartPoi), reversedFeature);
-        while(distance < accDistance) {
+        while (distance < accDistance) {
             tmpPositions.push({
                 time: new Date(endDatetime.getTime() - sec * 1000),
-                location: Turf.getCoord(Turf.along(reversedAccDownFeature, distance))
-            })
+                location: Turf.getCoord(Turf.along(reversedAccDownFeature, distance)),
+            });
             sec = i++ * sampleUnitSec;
             distance = (1 / 2) * accVelocity * (((sec) * (sec)) / 3600); //km
         }
@@ -191,25 +187,24 @@ function makeTrainEntity (line, train, railways) {
             };
         }
 
-        if(array[index+2]) {
-            const endNodeDepartDatetime = getTodayWithTime(array[index+1].depart);
+        if (timetable[index + 2]) {
+            const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
             plus9hours(endNodeDepartDatetime);
 
             angles.push({
                 startDatetime: endDatetime,
                 endDatetime: endNodeDepartDatetime,
-                lastAngle
-            })
+                lastAngle,
+            });
         }
-
-    })
+    }
 
     return {
         trainNo: train.trainNo,
         positions,
         stations,
         angles,
-    }
+    };
 
 }
 
