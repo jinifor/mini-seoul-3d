@@ -1,14 +1,14 @@
 import {Period} from "./datetime";
 
-export type Bearing = {
+export type angle = {
     period: Period;
     value: number;
 }
 
 export class SampledBearingProperty {
-    samples: Bearing[]
+    samples: angle[]
 
-    constructor(samples?: Bearing[]) {
+    constructor(samples?: angle[]) {
         this.samples = samples || [];
     }
 
