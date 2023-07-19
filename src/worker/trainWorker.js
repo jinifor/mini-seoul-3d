@@ -90,9 +90,9 @@ function makeTrainEntity (line, train, railways) {
         const diff = endDatetime.getTime() - startDatetime.getTime();
         const totalElapsedSec = Math.floor(diff / 1000);
 
-        const feature = Turf.lineString(railwayCoords)
+        const feature = Turf.lineString(railwayCoords);
         const reversedLine = [...railwayCoords].reverse();
-        const reversedFeature = Turf.lineString(reversedLine)
+        const reversedFeature = Turf.lineString(reversedLine);
 
         // 시작지점(속도증가), 속도증가종료지점, -----[속도일정]-----, 속도감소시작지점, 종료지점
         const startPoi = Turf.getCoord(Turf.along(feature, 0));
@@ -115,35 +115,42 @@ function makeTrainEntity (line, train, railways) {
         const accVelocity = ((velocity * 1000 /3600) / accElapsedSec) / 1000 * 3600; // km/h^2
 
         // - 1 구간 구하기
-        let i = 0;
-        let sec = ++i * sampleUnitSec;
-        let distance =  (1 / 2) * accVelocity * (((sec) * (sec)) / 3600);
-        while(distance < accDistance) {
+        let i = 1;
+        let sec = sampleUnitSec;
+        let distance = 0.5 * accVelocity * ((sec * sec) / 3600);
+
+        while (distance < accDistance) {
+            const time = new Date(startDatetime.getTime() + sec * 1000);
+            const location = Turf.getCoord(Turf.along(accUpFeature, distance));
             positions.push({
-                time: new Date(startDatetime.getTime() + sec * 1000),
-                location: Turf.getCoord(Turf.along(accUpFeature, distance))
-            })
+                time,
+                location,
+            });
+
             sec = i++ * sampleUnitSec;
-            distance = (1 / 2) * accVelocity * (((sec) * (sec)) / 3600); //km
+            distance = 0.5 * accVelocity * ((sec * sec) / 3600); //km
         }
 
         positions.push({
             time: new Date(startDatetime.getTime() + accElapsedSec * 1000),
             location: accUpEndPoi,
-        })
+        });
 
         // - 2 구간 구하기
         const vertexList = Turf.getCoords(noAccFeature);
         let lastPosition = positions[positions.length - 1]
 
-        for(let vertex of vertexList) {
+        const velocityInSeconds = velocity / 3600; // velocity를 초 단위로 변환
+
+        for (let i = 0; i < vertexList.length; i++) {
+            const vertex = vertexList[i];
             const distance = Turf.distance(Turf.point(lastPosition.location), Turf.point(vertex));
-            const sec = distance / velocity * 60 * 60;
+            const sec = distance / velocityInSeconds;
 
             positions.push({
                 time: new Date(lastPosition.time.getTime() + sec * 1000),
-                location: vertex
-            })
+                location: vertex,
+            });
         }
 
         positions.push({
