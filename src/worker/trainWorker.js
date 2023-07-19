@@ -61,16 +61,26 @@ function makeTrainEntity (line, train, railways) {
         plus9hours(startDatetime);
         plus9hours(endDatetime);
 
-        if(startNode.arrive !== '00:00:00' || startNode.depart !== '00:00:00') {
-            const arrive = getTodayWithTime(startNode.arrive);
-            const depart = getTodayWithTime(startNode.depart)
-            plus9hours(arrive);
-            plus9hours(depart);
+        if(startNode.arrive == '00:00:00') {
+            const arrive = new Date(startDatetime.getTime() - 30 * 1000);
+
             stations.push ({
-                startDatetime: arrive, endDatetime: depart,
+                startDatetime: arrive, endDatetime: startDatetime,
+                info: `현재역: ${startNode.name}`
+            })
+            positions.push ({
+                location: railwayCoords[0],
+                time: arrive
+            })
+        }else if(startNode.arrive !== '00:00:00' || startNode.depart !== '00:00:00') {
+            const arrive = getTodayWithTime(startNode.arrive);
+            plus9hours(arrive);
+            stations.push ({
+                startDatetime: arrive, endDatetime: startDatetime,
                 info: `현재역: ${startNode.name}`
             })
         }
+
         stations.push ({
             startDatetime, endDatetime,
             info: `전역: ${startNode.name}, 다음역: ${endNode.name}`
@@ -106,7 +116,7 @@ function makeTrainEntity (line, train, railways) {
 
         // - 1 구간 구하기
         let i = 0;
-        let sec = i++ * sampleUnitSec;
+        let sec = ++i * sampleUnitSec;
         let distance =  (1 / 2) * accVelocity * (((sec) * (sec)) / 3600);
         while(distance < accDistance) {
             positions.push({
@@ -140,6 +150,7 @@ function makeTrainEntity (line, train, railways) {
             time: new Date(startDatetime.getTime()+ (accElapsedSec + noAccElapsedSec) * 1000),
             location: accDownStartPoi
         })
+
         // - 3 구간 구하기
         i = 0;
         sec = i++ * sampleUnitSec;
@@ -157,19 +168,20 @@ function makeTrainEntity (line, train, railways) {
 
         positions.push(...tmpPositions.reverse());
 
-        // 4. 각도 변화 //TODO
-        let lastAngle = 0;
+        // 4. 각도 변화  // TODO 여전히 속도가 좀 느리긴 함
+        const length = positions.length;
+        const angles = new Array(length - 1); // 최대 크기 설정
 
-        for(let p = 0; p<positions.length; p++) {
+        let lastAngle = 0;
+        for (let p = 0; p < length - 1; p++) {
             const position = positions[p];
-            const nextPosition = positions[p+1];
-            if(!nextPosition) break;
+            const nextPosition = positions[p + 1];
             lastAngle = Turf.bearing(Turf.point(position.location), Turf.point(nextPosition.location));
-            angles.push({
+            angles[p] = {
                 startDatetime: position.time,
                 endDatetime: nextPosition.time,
-                lastAngle
-            })
+                lastAngle,
+            };
         }
 
         if(array[index+2]) {

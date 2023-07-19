@@ -47,7 +47,6 @@ export function trainsWorker(data: DataSet) {
     const datasource = map.findDataSourceByName(map.DATASOURCE_NAME.TRAIN);
 
     worker.onmessage = function (event) {
-        console.log("main 시작", new Date())
         const entities = event.data;
         entities.map(entity => {
             const entityPosition =  new Cesium.SampledPositionProperty();
@@ -83,7 +82,6 @@ export function trainsWorker(data: DataSet) {
             };
             datasource.entities.add(newEntity);
         });
-        console.log("main 끝", new Date())
 
     };
 
