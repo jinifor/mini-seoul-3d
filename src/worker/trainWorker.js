@@ -1,6 +1,6 @@
 import * as Turf from '@turf/turf';
 
-const accDistance = 0.05;
+const accDistance = 0.04;
 const sampleUnitSec = 1;
 const options = {units: 'kilometers'};
 
@@ -64,6 +64,16 @@ function makeTrainEntity (line, train, railways) {
             positions.push ({
                 location: railwayCoords[0],
                 time: arrive
+            })
+        }else if(endNode.depart == '00:00:00') {
+            const depart = new Date(endDatetime.getTime() + 30 * 1000);
+            stations.push({
+                startDatetime: endDatetime, endDatetime: depart,
+                info: `현재역: ${endNode.name}`
+            })
+            positions.push({
+                location: railwayCoords[railwayCoords.length - 1],
+                time: depart
             })
         }else if(startNode.arrive !== '00:00:00' || startNode.depart !== '00:00:00') {
             const arrive = getTodayWithTime(startNode.arrive);
@@ -167,19 +177,16 @@ function makeTrainEntity (line, train, railways) {
         }
 
         // 4. 각도 변화  // TODO 여전히 속도가 좀 느리긴 함
-        const length = positions.length;
-        const angles = new Array(length - 1); // 최대 크기 설정
-
         let lastAngle = 0;
-        for (let p = 0; p < length - 1; p++) {
+        for (let p = 0; p < positions.length -1 ; p++) {
             const position = positions[p];
             const nextPosition = positions[p + 1];
             lastAngle = Turf.bearing(Turf.point(position.location), Turf.point(nextPosition.location));
-            angles[p] = {
+            angles.push({
                 startDatetime: position.time,
                 endDatetime: nextPosition.time,
                 lastAngle,
-            };
+            });
         }
 
         if (timetable[index + 2]) {
