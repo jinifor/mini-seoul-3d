@@ -17,7 +17,7 @@ type DataSet = {
 }
 
 export default (railwaysInfo: RailwayInfo[], timetablesInfo: TimetablesInfo[]) => {
-    const lines = ["line1", "line2", "line7"]
+    const lines = ["line7"]
 
     const dataSet: DataSet[] = [];
 
