@@ -177,28 +177,28 @@ function makeTrainEntity (line, train, railways) {
         }
 
         // 4. 각도 변화  // TODO 여전히 속도가 좀 느리긴 함
-        let lastAngle = 0;
-        for (let p = 0; p < positions.length -1 ; p++) {
-            const position = positions[p];
-            const nextPosition = positions[p + 1];
-            lastAngle = Turf.bearing(Turf.point(position.location), Turf.point(nextPosition.location));
-            angles.push({
-                startDatetime: position.time,
-                endDatetime: nextPosition.time,
-                lastAngle,
-            });
-        }
-
-        if (timetable[index + 2]) {
-            const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
-            plus9hours(endNodeDepartDatetime);
-
-            angles.push({
-                startDatetime: endDatetime,
-                endDatetime: endNodeDepartDatetime,
-                lastAngle,
-            });
-        }
+        // let lastAngle = 0;
+        // for (let p = 0; p < positions.length -1 ; p++) {
+        //     const position = positions[p];
+        //     const nextPosition = positions[p + 1];
+        //     lastAngle = Turf.bearing(Turf.point(position.location), Turf.point(nextPosition.location));
+        //     angles.push({
+        //         startDatetime: position.time,
+        //         endDatetime: nextPosition.time,
+        //         lastAngle,
+        //     });
+        // }
+        //
+        // if (timetable[index + 2]) {
+        //     const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
+        //     plus9hours(endNodeDepartDatetime);
+        //
+        //     angles.push({
+        //         startDatetime: endDatetime,
+        //         endDatetime: endNodeDepartDatetime,
+        //         lastAngle,
+        //     });
+        // }
     }
 
     return {
