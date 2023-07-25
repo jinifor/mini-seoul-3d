@@ -108,35 +108,35 @@ function makeTrainEntity (line, train, railways) {
         const accVelocityInSec = velocityInSec / accElapsedSec; // km/s^2
 
         // 변위 구하기
-        const getDisplacement = (sec) => { // return km
-            if (0 <= sec && sec < accElapsedSec) {
-                return 0.5 * accVelocityInSec * (sec * sec); //km
-            } else if (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec) {
-                return ((velocityInSec * accElapsedSec) / 2) + (velocityInSec * (sec - accElapsedSec));
-            } else if (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec) {
-                const _sec = totalElapsedSec - sec;
-                return totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
-            }
-        };
+        // const getDisplacement = (sec) => { // return km
+        //     if (0 <= sec && sec < accElapsedSec) {
+        //         return 0.5 * accVelocityInSec * (sec * sec); //km
+        //     } else if (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec) {
+        //         return ((velocityInSec * accElapsedSec) / 2) + (velocityInSec * (sec - accElapsedSec));
+        //     } else if (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec) {
+        //         const _sec = totalElapsedSec - sec;
+        //         return totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
+        //     }
+        // };
 
-        const accUpEndDisplacement = getDisplacement(accElapsedSec);
-        const accDownStartDisplacement = getDisplacement(totalElapsedSec - accElapsedSec);
+        const accUpEndDisplacement = ((velocityInSec * accElapsedSec) / 2);
+        const accDownStartDisplacement = totalDistance - accUpEndDisplacement;
 
-        const getTakenSec = (displacement) => {
-            if (displacement < accUpEndDisplacement) {
-                return Math.sqrt((2 * displacement) / accVelocityInSec);
-            } else if (accUpEndDisplacement <= displacement && displacement < accDownStartDisplacement) {
-                return (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
-            } else if (accDownStartDisplacement <= displacement && displacement <= totalDistance) {
-                const _displacement = totalDistance - displacement;
-                return totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec);
-            }
-        };
+        // const getTakenSec = (displacement) => {
+        //     if (displacement < accUpEndDisplacement) {
+        //         return Math.sqrt((2 * displacement) / accVelocityInSec);
+        //     } else if (accUpEndDisplacement <= displacement && displacement < accDownStartDisplacement) {
+        //         return (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
+        //     } else if (accDownStartDisplacement <= displacement && displacement <= totalDistance) {
+        //         const _displacement = totalDistance - displacement;
+        //         return totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec);
+        //     }
+        // };
 
         // - 1 구간 구하기
         for (let sec = 0; sec < accElapsedSec; sec += sampleUnitSec) {
             const time = new Date(startDatetime.getTime() + sec * 1000);
-            const displacement = getDisplacement(sec);
+            const displacement =  0.5 * accVelocityInSec * (sec * sec); ;
             const location = Turf.getCoord(Turf.along(feature, displacement, options));
             positions[p++] = {
                 time,
@@ -149,21 +149,30 @@ function makeTrainEntity (line, train, railways) {
         const wholeVertexList = Turf.getCoords(feature);
         const vertexList = Turf.getCoords(noAccFeature);
 
-        for (let i = 0; i < vertexList.length; i++) {
-            const vertex = vertexList[i];
-            const _displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
+        let _displacement = 0;
+        let takenSec = 0;
+        let time = null;
 
-            const time = new Date(startDatetime.getTime() + getTakenSec(_displacement) * 1000);
+        let i = 0;
+        while (i < vertexList.length) {
+            const vertex = vertexList[i];
+            _displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
+            takenSec = (_displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
+            time = new Date(startDatetime.getTime() + takenSec * 1000);
+
             positions[p++] = {
                 time,
                 location: vertex,
             };
+
+            i++;
         }
 
         // - 3 구간 구하기
         for (let sec = accElapsedSec + noAccElapsedSec; sec < totalElapsedSec; sec += sampleUnitSec) {
             const time = new Date(startDatetime.getTime() + sec * 1000);
-            const displacement = getDisplacement(sec);
+            const _sec = totalElapsedSec - sec;
+            const displacement = totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
             const location = Turf.getCoord(Turf.along(feature, displacement, options));
             positions[p++] = {
                 time,
@@ -172,31 +181,31 @@ function makeTrainEntity (line, train, railways) {
         }
 
         // -4 각도 구하기
-        let lastAngle = 0;
-        for (let v = 0; v < wholeVertexList.length -1 ; v++) {
-            const vertex = wholeVertexList[v];
-            const nextVertex = wholeVertexList[v + 1];
-            lastAngle = Turf.bearing(vertex, nextVertex);
-            const displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
-            const nextDisplacement = Turf.length(Turf.lineSlice(wholeVertexList[0], nextVertex, feature), options);
-
-            angles[a++] = {
-                startDatetime: new Date(startDatetime.getTime() + getTakenSec(displacement) * 1000),
-                endDatetime: new Date(startDatetime.getTime() + getTakenSec(nextDisplacement) * 1000),
-                angle: lastAngle,
-            };
-        }
-
-        if (timetable[index + 2]) {
-            const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
-            plus9hours(endNodeDepartDatetime);
-
-            angles[a++] = {
-                startDatetime: endDatetime,
-                endDatetime: endNodeDepartDatetime,
-                angle: lastAngle,
-            };
-        }
+        // let lastAngle = 0;
+        // for (let v = 0; v < wholeVertexList.length -1 ; v++) {
+        //     const vertex = wholeVertexList[v];
+        //     const nextVertex = wholeVertexList[v + 1];
+        //     lastAngle = Turf.bearing(vertex, nextVertex);
+        //     const displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
+        //     const nextDisplacement = Turf.length(Turf.lineSlice(wholeVertexList[0], nextVertex, feature), options);
+        //
+        //     angles[a++] = {
+        //         startDatetime: new Date(startDatetime.getTime() + getTakenSec(displacement) * 1000),
+        //         endDatetime: new Date(startDatetime.getTime() + getTakenSec(nextDisplacement) * 1000),
+        //         angle: lastAngle,
+        //     };
+        // }
+        //
+        // if (timetable[index + 2]) {
+        //     const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
+        //     plus9hours(endNodeDepartDatetime);
+        //
+        //     angles[a++] = {
+        //         startDatetime: endDatetime,
+        //         endDatetime: endNodeDepartDatetime,
+        //         angle: lastAngle,
+        //     };
+        // }
 
     }
 
