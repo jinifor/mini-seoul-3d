@@ -158,7 +158,7 @@ function makeTrainEntity (line, train, railways) {
         }
 
         // - 3 구간 구하기
-        for(let sec = accElapsedSec + noAccElapsedSec; sec < totalElapsedSec; sec +=sampleUnitSec ){ // TODO <= 이건지 < 이건지..
+        for(let sec = accElapsedSec + noAccElapsedSec; sec < totalElapsedSec; sec +=sampleUnitSec ){
             const time = new Date(startDatetime.getTime() + sec * 1000);
             const displacement = getDisplacement(sec);
             const location = Turf.getCoord(Turf.along(feature, displacement, options));
