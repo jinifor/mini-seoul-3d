@@ -13,6 +13,7 @@ const options = {units: 'kilometers'};
  *     angles: [],
  * }
  */
+const mockDataSetList = [];
 
 function getTodayWithTime (timeString) {
     // ex time "08:10:05"
@@ -28,17 +29,18 @@ function plus9hours (jsDate) {
 
 function makeTrainEntity (line, train, railways) {
     const timetable = train.timetables;
-
     const positions = [];
+    let p = 0;
     const stations = [];
+    let s = 0;
     const angles = [];
+    let a = 0;
 
     for (let index = 0; index < timetable.length - 1; index++) {
-
         const startNode = timetable[index];
         const endNode = timetable[index + 1];
 
-        if (!endNode) break; //TODO 마지막 역에서 station 정보와 position 정보 angle 정보 넣을 것 인지.
+        if (!endNode) break;
 
         const railway = railways?.find(
             (railway) =>
@@ -52,97 +54,98 @@ function makeTrainEntity (line, train, railways) {
         plus9hours(startDatetime);
         plus9hours(endDatetime);
 
-        if(startNode.arrive == '00:00:00') {
+        if (startNode.arrive === '00:00:00') {
             const arrive = new Date(startDatetime.getTime() - 30 * 1000);
 
-            stations.push ({
+            stations[s++] = {
                 startDatetime: arrive, endDatetime: startDatetime,
                 info: `현재역: ${startNode.name}`
-            })
-            positions.push ({
+            };
+
+            positions[p++] = {
                 location: railwayCoords[0],
                 time: arrive
-            })
-        }else if(endNode.depart == '00:00:00') {
+            };
+        } else if (endNode.depart === '00:00:00') {
             const depart = new Date(endDatetime.getTime() + 30 * 1000);
-            stations.push({
+            stations[s++] = {
                 startDatetime: endDatetime, endDatetime: depart,
                 info: `현재역: ${endNode.name}`
-            })
-            positions.push({
+            };
+
+            positions[p++] = {
                 location: railwayCoords[railwayCoords.length - 1],
                 time: depart
-            })
-        }else if(startNode.arrive !== '00:00:00' || startNode.depart !== '00:00:00') {
+            };
+        } else {
             const arrive = getTodayWithTime(startNode.arrive);
             plus9hours(arrive);
-            stations.push ({
+            stations[s++] = {
                 startDatetime: arrive, endDatetime: startDatetime,
                 info: `현재역: ${startNode.name}`
-            })
+            };
         }
 
-        stations.push ({
+        stations[s++] = {
             startDatetime, endDatetime,
             info: `전역: ${startNode.name}, 다음역: ${endNode.name}`
-        })
+        };
 
         // 계산 시작
         const diff = endDatetime.getTime() - startDatetime.getTime();
         const totalElapsedSec = diff / 1000;
 
         const feature = Turf.lineString(railwayCoords);
-        const totalDistance = Turf.length(feature, options) ; // km
+        const totalDistance = Turf.length(feature, options); // km
 
         const noAccElapsedSec = totalElapsedSec - 2 * accElapsedSec;
 
         //속도 구하기
-        const velocity = (totalDistance * 2 )/ ((totalElapsedSec + noAccElapsedSec)/3600) //km/h
-        const accVelocity = velocity / ( accElapsedSec / 3600); // km/h^2
+        const velocity = (totalDistance * 2) / ((totalElapsedSec + noAccElapsedSec) / 3600); //km/h
+        const accVelocity = velocity / (accElapsedSec / 3600); // km/h^2
 
         const velocityInSec = velocity / 3600; // km/s
         const accVelocityInSec = velocityInSec / accElapsedSec; // km/s^2
 
         // 변위 구하기
         const getDisplacement = (sec) => { // return km
-            if( 0 <= sec  && sec < accElapsedSec ) {
-                return  0.5 * accVelocityInSec * (sec * sec); //km
-            }else if( accElapsedSec <= sec  && sec <= totalElapsedSec - accElapsedSec ) {
+            if (0 <= sec && sec < accElapsedSec) {
+                return 0.5 * accVelocityInSec * (sec * sec); //km
+            } else if (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec) {
                 return ((velocityInSec * accElapsedSec) / 2) + (velocityInSec * (sec - accElapsedSec));
-            }else if( totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec ) {
+            } else if (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec) {
                 const _sec = totalElapsedSec - sec;
-                return totalDistance - 0.5 * accVelocityInSec * (_sec * _sec)
+                return totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
             }
-        }
+        };
 
         const accUpEndDisplacement = getDisplacement(accElapsedSec);
         const accDownStartDisplacement = getDisplacement(totalElapsedSec - accElapsedSec);
 
         const getTakenSec = (displacement) => {
-            if( displacement < accUpEndDisplacement ) {
+            if (displacement < accUpEndDisplacement) {
                 return Math.sqrt((2 * displacement) / accVelocityInSec);
-            }else if( accUpEndDisplacement <= displacement && displacement < accDownStartDisplacement ) {
-                return  (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
-            }else if ( accDownStartDisplacement <= displacement && displacement <= totalDistance ) {
+            } else if (accUpEndDisplacement <= displacement && displacement < accDownStartDisplacement) {
+                return (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
+            } else if (accDownStartDisplacement <= displacement && displacement <= totalDistance) {
                 const _displacement = totalDistance - displacement;
-                return totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec)
+                return totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec);
             }
-        }
+        };
 
         // - 1 구간 구하기
-        for(let sec= 0; sec < accElapsedSec; sec += sampleUnitSec) {
+        for (let sec = 0; sec < accElapsedSec; sec += sampleUnitSec) {
             const time = new Date(startDatetime.getTime() + sec * 1000);
             const displacement = getDisplacement(sec);
             const location = Turf.getCoord(Turf.along(feature, displacement, options));
-            positions.push({
+            positions[p++] = {
                 time,
                 location,
-            });
+            };
         }
 
         // - 2 구간 구하기
         const noAccFeature = Turf.lineSliceAlong(feature, accUpEndDisplacement, accDownStartDisplacement, options);
-
         const wholeVertexList = Turf.getCoords(feature);
         const vertexList = Turf.getCoords(noAccFeature);
 
@@ -151,51 +154,52 @@ function makeTrainEntity (line, train, railways) {
             const _displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
 
             const time = new Date(startDatetime.getTime() + getTakenSec(_displacement) * 1000);
-            positions.push({
+            positions[p++] = {
                 time,
                 location: vertex,
-            });
+            };
         }
 
         // - 3 구간 구하기
-        for(let sec = accElapsedSec + noAccElapsedSec; sec < totalElapsedSec; sec +=sampleUnitSec ){
+        for (let sec = accElapsedSec + noAccElapsedSec; sec < totalElapsedSec; sec += sampleUnitSec) {
             const time = new Date(startDatetime.getTime() + sec * 1000);
             const displacement = getDisplacement(sec);
             const location = Turf.getCoord(Turf.along(feature, displacement, options));
-            positions.push({
+            positions[p++] = {
                 time,
                 location,
-            });
+            };
         }
 
         // -4 각도 구하기
-        // let lastAngle = 0;
-        // for (let v = 0; v < wholeVertexList.length -1 ; v++) {
-        //     const vertex = wholeVertexList[v];
-        //     const nextVertex = wholeVertexList[v + 1];
-        //     lastAngle = Turf.bearing(vertex, nextVertex);
-        //     const displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
-        //     const nextDisplacement = Turf.length(Turf.lineSlice(wholeVertexList[0], nextVertex, feature), options);
-        //
-        //     angles.push({
-        //         startDatetime: new Date(startDatetime.getTime() + getTakenSec(displacement) * 1000),
-        //         endDatetime: new Date(startDatetime.getTime() + getTakenSec(nextDisplacement) * 1000),
-        //         angle: lastAngle,
-        //     });
-        // }
-        //
-        // if (timetable[index + 2]) {
-        //     const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
-        //     plus9hours(endNodeDepartDatetime);
-        //
-        //     angles.push({
-        //         startDatetime: endDatetime,
-        //         endDatetime: endNodeDepartDatetime,
-        //         angle: lastAngle,
-        //     });
-        // }
+        let lastAngle = 0;
+        for (let v = 0; v < wholeVertexList.length -1 ; v++) {
+            const vertex = wholeVertexList[v];
+            const nextVertex = wholeVertexList[v + 1];
+            lastAngle = Turf.bearing(vertex, nextVertex);
+            const displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
+            const nextDisplacement = Turf.length(Turf.lineSlice(wholeVertexList[0], nextVertex, feature), options);
+
+            angles[a++] = {
+                startDatetime: new Date(startDatetime.getTime() + getTakenSec(displacement) * 1000),
+                endDatetime: new Date(startDatetime.getTime() + getTakenSec(nextDisplacement) * 1000),
+                angle: lastAngle,
+            };
+        }
+
+        if (timetable[index + 2]) {
+            const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
+            plus9hours(endNodeDepartDatetime);
+
+            angles[a++] = {
+                startDatetime: endDatetime,
+                endDatetime: endNodeDepartDatetime,
+                angle: lastAngle,
+            };
+        }
 
     }
+
 
     return {
         trainNo: train.trainNo,
