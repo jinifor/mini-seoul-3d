@@ -168,6 +168,33 @@ function makeTrainEntity (line, train, railways) {
             });
         }
 
+        // -4 각도 구하기
+        // let lastAngle = 0;
+        // for (let v = 0; v < wholeVertexList.length -1 ; v++) {
+        //     const vertex = wholeVertexList[v];
+        //     const nextVertex = wholeVertexList[v + 1];
+        //     lastAngle = Turf.bearing(vertex, nextVertex);
+        //     const displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
+        //     const nextDisplacement = Turf.length(Turf.lineSlice(wholeVertexList[0], nextVertex, feature), options);
+        //
+        //     angles.push({
+        //         startDatetime: new Date(startDatetime.getTime() + getTakenSec(displacement) * 1000),
+        //         endDatetime: new Date(startDatetime.getTime() + getTakenSec(nextDisplacement) * 1000),
+        //         angle: lastAngle,
+        //     });
+        // }
+        //
+        // if (timetable[index + 2]) {
+        //     const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
+        //     plus9hours(endNodeDepartDatetime);
+        //
+        //     angles.push({
+        //         startDatetime: endDatetime,
+        //         endDatetime: endNodeDepartDatetime,
+        //         angle: lastAngle,
+        //     });
+        // }
+
     }
 
     return {
