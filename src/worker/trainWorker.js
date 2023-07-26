@@ -24,10 +24,6 @@ function getVelocity (accDistance, noAccDistance, elapsedSec) {
     return velocity;
 }
 
-function getDuration (distance, velocity) {
-    return distance / velocity; //h
-}
-
 function makeTrainEntity (line, train, railways) {
     const timetable = train.timetables;
 
@@ -158,7 +154,6 @@ function makeTrainEntity (line, train, railways) {
                 location,
             });
         }
-
     }
 
     return {
