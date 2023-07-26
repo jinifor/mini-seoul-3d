@@ -1,7 +1,7 @@
 import * as Turf from '@turf/turf';
 
-const accDistance = 0.04;
-const sampleUnitSec = 1;
+const accElapsedSec = 5;
+const sampleUnitSec = 0.5;
 const options = {units: 'kilometers'};
 
 function getTodayWithTime (timeString) {
@@ -95,59 +95,43 @@ function makeTrainEntity (line, train, railways) {
         })
 
         // 계산 시작
+        // 계산 시작
         const diff = endDatetime.getTime() - startDatetime.getTime();
         const totalElapsedSec = diff / 1000;
 
         const feature = Turf.lineString(railwayCoords);
-        const reversedLine = [...railwayCoords].reverse();
-        const reversedFeature = Turf.lineString(reversedLine);
+        const totalDistance = Turf.length(feature, options); // km
 
-        // 시작지점(속도증가), 속도증가종료지점, -----[속도일정]-----, 속도감소시작지점, 종료지점
-        const startPoi = Turf.getCoord(Turf.along(feature, 0));
-        const accUpEndPoi = Turf.getCoord(Turf.along(feature, accDistance));
-        const accDownStartPoi = Turf.getCoord(Turf.along(reversedFeature, accDistance));
-        const endPoi = Turf.getCoord(Turf.along(reversedFeature, 0));
+        const noAccElapsedSec = totalElapsedSec - 2 * accElapsedSec;
 
-        const accUpFeature = Turf.lineSlice(Turf.point(startPoi), Turf.point(accUpEndPoi), feature);//Turf.lineSliceAlong(feature, 0, accDistance);
-        const noAccFeature = Turf.lineSlice(Turf.point(accUpEndPoi), Turf.point(accDownStartPoi), feature);
-        const accDownFeature = Turf.lineSlice(Turf.point(accDownStartPoi), Turf.point(endPoi), feature); //Turf.lineSliceAlong(reversedFeature, 0, accDistance);
+        //속도 구하기
+        const velocity = (totalDistance * 2) / ((totalElapsedSec + noAccElapsedSec) / 3600); //km/h
+        const accVelocity = velocity / (accElapsedSec / 3600); // km/h^2
 
-        // 등속도 구간의 거리
-        const noAccDistance = Turf.length(noAccFeature, options); // km
-        // 최고속도
-        const velocity = getVelocity(accDistance*2, noAccDistance, totalElapsedSec); // km/h
-        // 등가속도 구간괴 등속도 구간의 소요시간
-        const accElapsedSec = getDuration(accDistance, velocity/2) * 60 * 60 // 평균속도 velocity/2 (0 ~ velocity)
-        // 가속도
-        const accVelocity = ((velocity * 1000 /3600) / accElapsedSec) / 1000 * 3600; // km/h^2
+        const velocityInSec = velocity / 3600; // km/s
+        const accVelocityInSec = velocityInSec / accElapsedSec; // km/s^2
+
+        const accUpEndDisplacement = ((velocityInSec * accElapsedSec) / 2);
+        const accDownStartDisplacement = totalDistance - accUpEndDisplacement;
+
+        const accUpFeature = Turf.lineSliceAlong(feature, 0, accUpEndDisplacement, options);
+        const noAccFeature = Turf.lineSliceAlong(feature, accUpEndDisplacement, accDownStartDisplacement, options);
+        const accDownFeature = Turf.lineSliceAlong(feature, accDownStartDisplacement, totalDistance, options);
 
         // - 1 구간 구하기
-        let i = 1;
-        let sec = sampleUnitSec;
-        let distance = 0.5 * accVelocity * ((sec * sec) / 3600);
-
-        while ( !(sec > accElapsedSec) ) {
+        for (let sec = 0; sec < accElapsedSec; sec += sampleUnitSec) {
             const time = new Date(startDatetime.getTime() + sec * 1000);
-            const location = Turf.getCoord(Turf.along(accUpFeature, distance));
+            const displacement = 0.5 * accVelocityInSec * (sec * sec);
+            const location = Turf.getCoord(Turf.along(feature, displacement, options));
             positions.push({
                 time,
                 location,
             });
-
-            sec = i++ * sampleUnitSec;
-            distance = 0.5 * accVelocity * ((sec * sec) / 3600); //km
         }
-
-        positions.push({
-            time: new Date(startDatetime.getTime() + accElapsedSec * 1000),
-            location: accUpEndPoi,
-        });
 
         // - 2 구간 구하기
         const vertexList = Turf.getCoords(noAccFeature);
         let lastPosition = positions[positions.length - 1];
-
-        const velocityInSec = velocity / 3600; // velocity를 초 단위로 변환
 
         for (let i = 0; i < vertexList.length; i++) {
             const vertex = vertexList[i];
@@ -164,21 +148,15 @@ function makeTrainEntity (line, train, railways) {
         }
 
         // - 3 구간 구하기
-        i = 0;
-        sec = i++ * sampleUnitSec;
-        distance = (velocity / 3600) * sec + (1/2) * (-accVelocity) * (sec * sec) / 3600; //km
-        lastPosition = positions[positions.length - 1];
-
-        while ( !(sec > accElapsedSec) ) {
-            const time = new Date(lastPosition.time.getTime() + sec * 1000);
-            const location = Turf.getCoord(Turf.along(accDownFeature, distance));
+        for (let sec = accElapsedSec + noAccElapsedSec  + sampleUnitSec; sec < totalElapsedSec; sec += sampleUnitSec) {
+            const time = new Date(startDatetime.getTime() + sec * 1000);
+            const _sec = totalElapsedSec - sec;
+            const displacement =  totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
+            const location = Turf.getCoord(Turf.along(feature, displacement, options));
             positions.push({
                 time,
                 location,
             });
-
-            sec = i++ * sampleUnitSec;
-            distance = (velocity / 3600) * sec + (1/2) * (-accVelocity) * (sec * sec) / 3600; //km
         }
 
     }
