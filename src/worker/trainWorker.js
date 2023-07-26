@@ -30,11 +30,8 @@ function plus9hours (jsDate) {
 function makeTrainEntity (line, train, railways) {
     const timetable = train.timetables;
     const positions = [];
-    let p = 0;
     const stations = [];
-    let s = 0;
     const angles = [];
-    let a = 0;
 
     for (let index = 0; index < timetable.length - 1; index++) {
         const startNode = timetable[index];
@@ -62,39 +59,39 @@ function makeTrainEntity (line, train, railways) {
         if (startNode.arrive === '00:00:00') {
             const arrive = new Date(startDatetime.getTime() - 30 * 1000);
 
-            stations[s++] = {
+            stations.push({
                 startDatetime: arrive, endDatetime: startDatetime,
                 info: `현재역: ${startNode.name}`
-            };
+            });
 
-            positions[p++] = {
+            positions.push({
                 location: railwayCoords[0],
                 time: arrive
-            };
+            });
         } else if (endNode.depart === '00:00:00') {
             const depart = new Date(endDatetime.getTime() + 30 * 1000);
-            stations[s++] = {
+            stations.push({
                 startDatetime: endDatetime, endDatetime: depart,
                 info: `현재역: ${endNode.name}`
-            };
+            });
 
-            positions[p++] = {
+            positions.push({
                 location: railwayCoords[railwayCoords.length - 1],
                 time: depart
-            };
-        } else {
+            });
+        } else { // 00:00:00 아닌 경우
             const arrive = getTodayWithTime(startNode.arrive);
             plus9hours(arrive);
-            stations[s++] = {
+            stations.push({
                 startDatetime: arrive, endDatetime: startDatetime,
                 info: `현재역: ${startNode.name}`
-            };
+            });
         }
 
-        stations[s++] = {
+        stations.push({
             startDatetime, endDatetime,
             info: `전역: ${startNode.name}, 다음역: ${endNode.name}`
-        };
+        });
 
         // 계산 시작
         const diff = endDatetime.getTime() - startDatetime.getTime();
@@ -120,10 +117,10 @@ function makeTrainEntity (line, train, railways) {
             const time = new Date(startDatetime.getTime() + sec * 1000);
             const displacement =  0.5 * accVelocityInSec * (sec * sec); ;
             const location = Turf.getCoord(Turf.along(feature, displacement, options));
-            positions[p++] = {
+            positions.push({
                 time,
                 location,
-            };
+            });
         }
 
         // - 2 구간 구하기
@@ -142,10 +139,10 @@ function makeTrainEntity (line, train, railways) {
             takenSec = (_displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
             time = new Date(startDatetime.getTime() + takenSec * 1000);
 
-            positions[p++] = {
+            positions.push({
                 time,
                 location: vertex,
-            };
+            });
             i++;
         }
 
@@ -155,10 +152,10 @@ function makeTrainEntity (line, train, railways) {
             const _sec = totalElapsedSec - sec;
             const displacement = totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
             const location = Turf.getCoord(Turf.along(feature, displacement, options));
-            positions[p++] = {
+            positions.push({
                 time,
                 location,
-            };
+            });
         }
 
     }
