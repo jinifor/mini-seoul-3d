@@ -16,14 +16,6 @@ function plus9hours (jsDate) {
     jsDate.setHours(jsDate.getHours() + 9);
 }
 
-function getVelocity (accDistance, noAccDistance, elapsedSec) {
-    const accSec = (2 * accDistance * elapsedSec) / (noAccDistance + 2 * accDistance)
-    const noAccSec = elapsedSec - accSec;
-
-    const velocity = (noAccDistance / noAccSec) * 3600 // km/h
-    return velocity;
-}
-
 function makeTrainEntity (line, train, railways) {
     const timetable = train.timetables;
 
