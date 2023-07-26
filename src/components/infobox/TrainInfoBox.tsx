@@ -26,7 +26,7 @@ const TrainInfoBox = () => {
         if(entity) {
             const now = Cesium.JulianDate.toDate(map.getCurrentTime()); //TODO
             // @ts-ignore
-            return entity?.description.getValue().station.getValue(now);
+            return entity?.station.getValue(now);
         }
     }, [count]);
 

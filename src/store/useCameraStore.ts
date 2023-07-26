@@ -5,6 +5,8 @@ import * as Cesium from 'cesium'
 import mapConfig from '../map/config';
 
 interface useCameraStoreInterface {
+    available: boolean,
+    setAvailable: (available: boolean) => void,
     cameraEntity: Cesium.Entity | null,
     setCameraEntity: (entity: Cesium.Entity) => void,
     removeCameraEntity: () => void,
@@ -15,7 +17,13 @@ interface useCameraStoreInterface {
     setMode: (mode: string) => void,
 }
 
-const useTrainStore = create<useCameraStoreInterface>((set) => ({
+const useCameraStore = create<useCameraStoreInterface>((set) => ({
+    available: false,
+    setAvailable: (available) => {
+        set((state) => ({
+            available
+        }))
+    },
     cameraEntity: null,
     setCameraEntity: (cameraEntity) => {
         set((state) => ({
@@ -46,4 +54,4 @@ const useTrainStore = create<useCameraStoreInterface>((set) => ({
     }
 }))
 
-export default useTrainStore
+export default useCameraStore
