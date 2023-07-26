@@ -223,6 +223,9 @@ export default {
             // imageryProvider: new Cesium.OpenStreetMapImageryProvider({
             //     url : 'https://a.tile.openstreetmap.org/'
             // }),
+            imageryProvider: Cesium.createWorldImagery({
+                style: Cesium.IonWorldImageryStyle.ROAD,
+            }),
             shouldAnimate: true,
             animation: true,
             fullscreenButton: false,
