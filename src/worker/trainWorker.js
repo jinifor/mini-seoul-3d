@@ -189,7 +189,7 @@ onmessage = function (event) {
 /**
  * 계산식 설명
  *
- *  @ 1구간: 등가속도, 증감
+ *  @ 1구간: 등가속도, 가속
  *  @ 2구간: 등속도
  *  @ 3구간: 등가속도, 감속
  *
@@ -214,11 +214,11 @@ onmessage = function (event) {
  * };
  *
  * 2. 변위를 알고 소요시간을 구하는 경우
- *  @  1구간 (0 <= sec && sec < accElapsedSec)
+ *  @  1구간 (displacement < accUpEndDisplacement)
  *         : Math.sqrt((2 * displacement) / accVelocityInSec);
- *  @  2구간 (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec)
+ *  @  2구간 (accUpEndDisplacement <= displacement && displacement < accDownStartDisplacement)
  *         : (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
- *  @  3구간 (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec)
+ *  @  3구간 (accDownStartDisplacement <= displacement && displacement <= totalDistance)
  *         :  [ 단, _displacement = totalDistance - displacement]
  *         totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec);
  *

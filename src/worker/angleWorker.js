@@ -31,7 +31,7 @@ function makeAngle (line, train, railways) {
         );
 
         if(!railway) {
-            console.log('railway not found', line,train.trainNo, startNode, endNode);
+            // console.log('railway not found', line,train.trainNo, startNode, endNode);
             continue
         }
 
