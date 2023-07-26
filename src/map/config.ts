@@ -56,7 +56,7 @@ const MODE_VALUE = {
 }
 
 const TRAIN_SIZE = {
-    min: 10,
+    min: 5,
     max: 100,
 }
 
