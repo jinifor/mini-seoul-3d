@@ -5,6 +5,7 @@ import IconButton from '@mui/joy/IconButton';
 
 type PropsType = {
     icon: () => ReactNode,
+    available?: boolean,
     onClick?: any,
 }
 const ToolButton = (props: PropsType) => (
@@ -12,7 +13,8 @@ const ToolButton = (props: PropsType) => (
         <IconButton
             size="md"
             variant="soft"
-            color="success"
+            color={props?.available ? "success": "warning"}
+            disabled={!props?.available}
             component="a"
             onClick={props?.onClick}
         >
@@ -20,5 +22,9 @@ const ToolButton = (props: PropsType) => (
         </IconButton>
     </Box>
 );
+
+ToolButton.defaultProps = {
+    available: true
+};
 
 export default ToolButton;

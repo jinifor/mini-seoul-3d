@@ -70,9 +70,9 @@ const findDataSourceByName = (name) => {
 
 const getEntityBearing = (entity) => {
     const now = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-    if(!entity.description) return;
+    if(!entity.bearing) return;
 
-    let bearing = entity.description.getValue().bearing.getValue(now);
+    let bearing = entity.bearing.getValue(now);
 
     if(!bearing) return null;
     bearing = bearing < 0 ? bearing + 360 : bearing;

@@ -112,31 +112,8 @@ function makeTrainEntity (line, train, railways) {
         const velocityInSec = velocity / 3600; // km/s
         const accVelocityInSec = velocityInSec / accElapsedSec; // km/s^2
 
-        // 변위 구하기
-        // const getDisplacement = (sec) => { // return km
-        //     if (0 <= sec && sec < accElapsedSec) {
-        //         return 0.5 * accVelocityInSec * (sec * sec); //km
-        //     } else if (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec) {
-        //         return ((velocityInSec * accElapsedSec) / 2) + (velocityInSec * (sec - accElapsedSec));
-        //     } else if (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec) {
-        //         const _sec = totalElapsedSec - sec;
-        //         return totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
-        //     }
-        // };
-
         const accUpEndDisplacement = ((velocityInSec * accElapsedSec) / 2);
         const accDownStartDisplacement = totalDistance - accUpEndDisplacement;
-
-        // const getTakenSec = (displacement) => {
-        //     if (displacement < accUpEndDisplacement) {
-        //         return Math.sqrt((2 * displacement) / accVelocityInSec);
-        //     } else if (accUpEndDisplacement <= displacement && displacement < accDownStartDisplacement) {
-        //         return (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
-        //     } else if (accDownStartDisplacement <= displacement && displacement <= totalDistance) {
-        //         const _displacement = totalDistance - displacement;
-        //         return totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec);
-        //     }
-        // };
 
         // - 1 구간 구하기
         for (let sec = 0; sec < accElapsedSec; sec += sampleUnitSec) {
@@ -169,7 +146,6 @@ function makeTrainEntity (line, train, railways) {
                 time,
                 location: vertex,
             };
-
             i++;
         }
 
@@ -185,35 +161,7 @@ function makeTrainEntity (line, train, railways) {
             };
         }
 
-        // -4 각도 구하기
-        // let lastAngle = 0;
-        // for (let v = 0; v < wholeVertexList.length -1 ; v++) {
-        //     const vertex = wholeVertexList[v];
-        //     const nextVertex = wholeVertexList[v + 1];
-        //     lastAngle = Turf.bearing(vertex, nextVertex);
-        //     const displacement = Turf.length(Turf.lineSlice(wholeVertexList[0], vertex, feature), options);
-        //     const nextDisplacement = Turf.length(Turf.lineSlice(wholeVertexList[0], nextVertex, feature), options);
-        //
-        //     angles[a++] = {
-        //         startDatetime: new Date(startDatetime.getTime() + getTakenSec(displacement) * 1000),
-        //         endDatetime: new Date(startDatetime.getTime() + getTakenSec(nextDisplacement) * 1000),
-        //         angle: lastAngle,
-        //     };
-        // }
-        //
-        // if (timetable[index + 2]) {
-        //     const endNodeDepartDatetime = getTodayWithTime(timetable[index + 1].depart);
-        //     plus9hours(endNodeDepartDatetime);
-        //
-        //     angles[a++] = {
-        //         startDatetime: endDatetime,
-        //         endDatetime: endNodeDepartDatetime,
-        //         angle: lastAngle,
-        //     };
-        // }
-
     }
-
 
     return {
         trainNo: train.trainNo,
@@ -221,7 +169,6 @@ function makeTrainEntity (line, train, railways) {
         stations,
         angles,
     };
-
 }
 
 onmessage = function (event) {
@@ -230,13 +177,66 @@ onmessage = function (event) {
 
     const entities = [];
 
-    for(let train of trains) {
+    for(let i = 0; i < trains.length; i++) {
+        const train = trains[i];
         if(railways && line) {
             const entity = makeTrainEntity(line, train, railways);
             if(entity) entities.push(entity)
         }
     }
 
-    // 결과물을 메인 스레드로 보냄
-    postMessage(entities); //TODO
+    postMessage(entities);
 };
+
+
+/**
+ * 계산식 설명
+ *
+ *  @ 1구간: 등가속도, 증감
+ *  @ 2구간: 등속도
+ *  @ 3구간: 등가속도, 감속
+ *
+ * 1. 시간을 알고 변위를 구하는 경우
+ *  @  1구간 (0 <= sec && sec < accElapsedSec)
+ *          : 0.5 * accVelocityInSec * (sec * sec); //km
+ *  @  2구간 (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec)
+ *          : ((velocityInSec * accElapsedSec) / 2) + (velocityInSec * (sec - accElapsedSec)); //km
+ *  @  3구간 (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec)
+ *          :  [ 단, _sec = totalElapsedSec - sec]
+ *              totalDistance - 0.5 * accVelocityInSec * (_sec * _sec); //km
+ *{함수버전}
+ * const getDisplacement = (sec) => { // return km
+ *     if (0 <= sec && sec < accElapsedSec) {
+ *         return 0.5 * accVelocityInSec * (sec * sec); //km
+ *     } else if (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec) {
+ *         return ((velocityInSec * accElapsedSec) / 2) + (velocityInSec * (sec - accElapsedSec));
+ *     } else if (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec) {
+ *         const _sec = totalElapsedSec - sec;
+ *         return totalDistance - 0.5 * accVelocityInSec * (_sec * _sec);
+ *     }
+ * };
+ *
+ * 2. 변위를 알고 소요시간을 구하는 경우
+ *  @  1구간 (0 <= sec && sec < accElapsedSec)
+ *         : Math.sqrt((2 * displacement) / accVelocityInSec);
+ *  @  2구간 (accElapsedSec <= sec && sec <= totalElapsedSec - accElapsedSec)
+ *         : (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
+ *  @  3구간 (totalElapsedSec - accElapsedSec < sec && sec <= totalElapsedSec)
+ *         :  [ 단, _displacement = totalDistance - displacement]
+ *         totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec);
+ *
+ * {함수버전}
+ * const getTakenSec = (displacement) => {
+ *     if (displacement < accUpEndDisplacement) {
+ *         return Math.sqrt((2 * displacement) / accVelocityInSec);
+ *     } else if (accUpEndDisplacement <= displacement && displacement < accDownStartDisplacement) {
+ *         return (displacement - accUpEndDisplacement) / velocityInSec + accElapsedSec;
+ *     } else if (accDownStartDisplacement <= displacement && displacement <= totalDistance) {
+ *         const _displacement = totalDistance - displacement;
+ *         return totalElapsedSec - Math.sqrt((2 * _displacement) / accVelocityInSec);
+ *     }
+ * };
+ *
+ */
+
+

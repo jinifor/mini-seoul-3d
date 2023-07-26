@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import map from '../../map'
 // Icons import
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
@@ -16,6 +16,8 @@ import ToolButton from './ToolButton';
 
 import Layout from '../Layout';
 import CameraToolBox from "../cameraToolBox";
+
+import useCameraStore from "../../store/useCameraStore";
 
 const searchRoundedIcon = () => <SearchRoundedIcon />;
 const addRoundedIcon = () => <AddRoundedIcon />;
@@ -35,6 +37,8 @@ const zoom = (flag: boolean) => {
 const ToolBar = () => {
 
     const [ camera, setCamera ] = useState(false);
+
+    const { available } = useCameraStore();
 
     return (
         <div>
@@ -60,11 +64,12 @@ const ToolBar = () => {
 
                 <Layout.ToolGroup>
                     <ToolButton icon={layersRoundedIcon} />
-                    <ToolButton icon={videocamRoundedIcon} onClick={() => {setCamera(!camera)}} />
+                    <ToolButton icon={videocamRoundedIcon}
+                                available={available}
+                                onClick={() => {setCamera( !camera ) }} />
                     <ToolButton icon={infoRoundedIcon} />
                 </Layout.ToolGroup>
             </Layout.ToolBar>
-
 
             <div style={{display: camera ? 'block' : 'none' }}>
                 <CameraToolBox />

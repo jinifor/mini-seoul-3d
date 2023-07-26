@@ -7,21 +7,20 @@ import getTimetable from "../data/timetables";
 
 import getRailways from "./railways";
 
-export default (viewer: Viewer) => {
-    async function main() {
+export default async (viewer: Viewer) =>
+    new Promise((resolve, reject) => {
+        async function main() {
 
-        const [railwaysInfo, timetablesInfo] = await Promise.all([
-            getSplitRailways(),
-            getTimetable()
-        ]);
+            const [railwaysInfo, timetablesInfo] = await Promise.all([
+                getSplitRailways(),
+                getTimetable()
+            ]);
 
-        const dataSet = trains(railwaysInfo, timetablesInfo); // worker 생성
-        dataSet.map(data => {
-            trainsWorker(data);
-        })
-    }
+            const dataSet = trains(railwaysInfo, timetablesInfo); // worker 생성
+            trainsWorker(dataSet, resolve);
+        }
 
-    main();
-    getRailways(viewer);
-}
+        main();
+        getRailways(viewer);
+    });
 
