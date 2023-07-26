@@ -149,7 +149,7 @@ function makeTrainEntity (line, train, railways) {
     }
 
     return {
-        trainNo: `${line}-${train.trainNo}`,
+        trainNo: train.trainNo,
         positions,
         stations,
         angles,
