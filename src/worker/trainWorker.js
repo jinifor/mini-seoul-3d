@@ -47,6 +47,11 @@ function makeTrainEntity (line, train, railways) {
                 railway.startNodeId === startNode.node && railway.endNodeId === endNode.node
         );
 
+        if(!railway) {
+            console.log('railway not found', line,train.trainNo, startNode, endNode);
+            continue
+        }
+
         const railwayCoords = railway?.coordinates;
 
         const startDatetime = getTodayWithTime(startNode.depart);
@@ -180,7 +185,7 @@ function makeTrainEntity (line, train, railways) {
     }
 
     return {
-        trainNo: train.trainNo,
+        trainNo: `${line}-${train.trainNo}`,
         positions,
         stations,
         angles,

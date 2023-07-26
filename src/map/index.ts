@@ -11,11 +11,6 @@ let viewer: Viewer | null = null;
 
 let pickedEntity: Cesium.Entity | null = null;
 
-const TRAIN_SIZE = {
-    min: 10,
-    max: 1000,
-}
-
 const DATASOURCE_NAME = {
     TRAIN: 'train',
 }
@@ -45,8 +40,8 @@ const setKorDateTime = (timeStr: string | void) => {
 const getSizeByZoom = () => {
     const zoomLevel = viewer.camera.positionCartographic.height;
     let size = zoomLevel/100;
-    size = size > TRAIN_SIZE.max ? TRAIN_SIZE.max :
-            size < TRAIN_SIZE.min ? TRAIN_SIZE.min : size;
+    size = size > config.TRAIN_SIZE.max ? config.TRAIN_SIZE.max :
+            size < config.TRAIN_SIZE.min ? config.TRAIN_SIZE.min : size;
     return size
 }
 
@@ -225,16 +220,16 @@ export default {
             //     minimumLevel: 0,
             //     maximumLevel: 20
             // }),
-            imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-                url : 'https://a.tile.openstreetmap.org/'
-            }),
+            // imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+            //     url : 'https://a.tile.openstreetmap.org/'
+            // }),
             shouldAnimate: true,
             animation: true,
             fullscreenButton: false,
             timeline: true,
             geocoder: false, // toolbar
             homeButton: false, // toolbar
-            baseLayerPicker: false, // toolbar
+            baseLayerPicker: true, // toolbar
             sceneModePicker: false, // toolbar
             infoBox: false,
             selectionIndicator: false,
