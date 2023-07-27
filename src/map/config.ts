@@ -28,13 +28,13 @@ const CAMERA_MODE = {
 
 const MODE_VALUE = {
     [CAMERA_MODE.TRACK]: {
-        distance: 500,
+        distance: 300,
         pitch: Cesium.Math.toRadians(-50),
         bearing: (bearing)=> 180
     },
     [CAMERA_MODE.TRACK_BACK]: {
-        distance: 200,
-        pitch: Cesium.Math.toRadians(-80),
+        distance: 100,
+        pitch: Cesium.Math.toRadians(-75),
         bearing: (bearing)=> bearing >= 180 ? bearing - 180 : bearing + 180
     },
     [CAMERA_MODE.TRACK_BACK_UPWARD]: {
@@ -43,8 +43,8 @@ const MODE_VALUE = {
         bearing: (bearing)=> bearing >= 180 ? bearing - 180 : bearing + 180
     },
     [CAMERA_MODE.TRACK_FRONT]: {
-        distance: 200,
-        pitch: Cesium.Math.toRadians(-80),
+        distance: 100,
+        pitch: Cesium.Math.toRadians(-75),
         bearing: (bearing)=> bearing
     },
     [CAMERA_MODE.TRACK_FRONT_UPWARD]: {

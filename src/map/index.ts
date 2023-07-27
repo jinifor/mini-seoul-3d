@@ -75,7 +75,7 @@ const getEntityBearing = (entity) => {
     let bearing = entity.bearing.getValue(now);
 
     if(!bearing) return null;
-    bearing = bearing < 0 ? bearing + 360 : bearing;
+    bearing = bearing;
 
     return bearing;
 }
@@ -115,15 +115,17 @@ const animateCamera = (entity, fromBearing, toBearing, cameraMode) => {
     let currentStep = 0;
     const steps = 20;
 
-    const bearingDiff = toBearing - fromBearing;
+    let bearingDiff = toBearing - fromBearing;
     const bearingStep = bearingDiff / steps;
 
-    const stepDuration = 0.02; // 각 단계의 지속 시간 (초)
+    const stepDuration = 0.01; // 각 단계의 지속 시간 (초)
 
     function animate() {
         if (currentStep < steps) {
-            trackEntity(entity, fromBearing + bearingStep * currentStep, cameraMode);
+            fromBearing += bearingStep;
+            bearingDiff = toBearing - fromBearing;
             currentStep++;
+            trackEntity(entity, fromBearing, cameraMode);
             setTimeout(animate, stepDuration*1000);
         }
     }

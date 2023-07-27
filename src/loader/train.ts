@@ -16,7 +16,7 @@ type DataSet = {
 }
 
 export default (railwaysInfo: RailwayInfo[], timetablesInfo: TimetablesInfo[]) => {
-    const lines = ["line1", "line2", "line3", "line4", "line5", "line6", "line7", "line8"]
+    const lines = railwaysInfo.map(r => r.line);
 
     const dataSet: DataSet[] = [];
 
@@ -42,7 +42,7 @@ export function trainsWorker(data: DataSet[], resolve) {
 
     const dataLength = data.length;
 
-    let processed = 1;
+    let processed = 0;
 
     for(let i = 0; i < dataLength; i++) {
         const { line, trains, railways } = data[i];
