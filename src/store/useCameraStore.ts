@@ -35,7 +35,7 @@ const useCameraStore = create<useCameraStoreInterface>((set) => ({
             cameraEntity: null
         }))
     },
-    bearing: null,
+    bearing: 0,
     setBearing: (bearing) => {
         set((state) => ({
             bearing
@@ -43,7 +43,7 @@ const useCameraStore = create<useCameraStoreInterface>((set) => ({
     },
     removeBearing: () => {
         set((state) => ({
-            bearing: null
+            bearing: 0
         }))
     },
     mode: mapConfig.CAMERA_MODE.TRACK,

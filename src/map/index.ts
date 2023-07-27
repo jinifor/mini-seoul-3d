@@ -75,7 +75,7 @@ const getEntityBearing = (entity) => {
     let bearing = entity.bearing.getValue(now);
 
     if(!bearing) return null;
-    bearing = bearing;
+    bearing = bearing < 0 ? bearing + 360 : bearing;
 
     return bearing;
 }
@@ -116,6 +116,13 @@ const animateCamera = (entity, fromBearing, toBearing, cameraMode) => {
     const steps = 20;
 
     let bearingDiff = toBearing - fromBearing;
+    if(bearingDiff > 180) {
+        fromBearing += 360;
+        bearingDiff = toBearing - fromBearing;
+    }else if (bearingDiff < -180) {
+        fromBearing -= 360;
+        bearingDiff = toBearing - fromBearing;
+    }
     const bearingStep = bearingDiff / steps;
 
     const stepDuration = 0.01; // 각 단계의 지속 시간 (초)
@@ -217,14 +224,6 @@ export default {
         Cesium.Ion.defaultAccessToken = config.ACCESS_TOKEN;
 
         viewer = new Cesium.Viewer(mapId, {
-            // imageryProvider: new Cesium.UrlTemplateImageryProvider({
-            //     url: `${config.MAP_TILER.url}/maps/dataviz/{z}/{x}/{y}.png?key=${config.MAP_TILER.key}`,
-            //     minimumLevel: 0,
-            //     maximumLevel: 20
-            // }),
-            // imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-            //     url : 'https://a.tile.openstreetmap.org/'
-            // }),
             imageryProvider: Cesium.createWorldImagery({
                 style: Cesium.IonWorldImageryStyle.ROAD,
             }),
@@ -243,19 +242,8 @@ export default {
             // terrainProvider: new Cesium.CesiumTerrainProvider({
             //     url: "https://175.197.92.213:10210/terrain-tile/dem05_ellipsoid"
             // }),
-            // 영상
             showRenderLoopErrors: false,
         });
-
-        // viewer.scene.primitives.add(
-        //     new Cesium.Cesium3DTileset({
-        //         // @ts-ignore
-        //         url: `http://175.197.92.213:10210/ngii-buildings/3DTiles_20230613/su/tileset.json`,
-        //         customShader: new Cesium.CustomShader({
-        //             lightingModel: Cesium.LightingModel.UNLIT,
-        //         }),
-        //     })
-        // );
 
         viewer.bottomContainer.style.visibility = 'hidden';
 
