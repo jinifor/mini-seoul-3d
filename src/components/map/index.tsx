@@ -10,9 +10,9 @@ const mapId = 'cesiumContainer';
 const Map = () => {
 
     const { setEntity, removeEntity } = useTrainStore();
-    const { mode, setCameraEntity, setBearing, removeCameraEntity, removeBearing } = useCameraStore();
+    const { mode, setCameraEntity, setBearing, removeCameraEntity, removeBearing, setAvailable } = useCameraStore();
 
-    useEffect(() => {
+     useEffect(() => {
         const viewer = map.getViewer();
         const mapContainer = document.getElementById(mapId);
 
@@ -41,8 +41,12 @@ const Map = () => {
                 })
             }
         })
-        // map.store
-        loader(map.getViewer());
+
+        // camera tool btn on
+        loader(map.getViewer()).then(() => {
+            setAvailable(true);
+        });
+
     }, [mapId]);
 
     return <div id={mapId}/>;

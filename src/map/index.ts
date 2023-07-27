@@ -11,11 +11,6 @@ let viewer: Viewer | null = null;
 
 let pickedEntity: Cesium.Entity | null = null;
 
-const TRAIN_SIZE = {
-    min: 10,
-    max: 1000,
-}
-
 const DATASOURCE_NAME = {
     TRAIN: 'train',
 }
@@ -39,15 +34,14 @@ const setKorDateTime = (timeStr: string | void) => {
     // ex time "08:10:05"
     const today = timeStr? getTodayWithTime(timeStr) : new Date();
     plus9hours(today);
-    const julianDate = getJulianDate(today);
-    viewer.clock.currentTime = julianDate;
+    viewer.clock.currentTime = getJulianDate(today);
 }
 
 const getSizeByZoom = () => {
     const zoomLevel = viewer.camera.positionCartographic.height;
     let size = zoomLevel/100;
-    size = size > TRAIN_SIZE.max ? TRAIN_SIZE.max :
-            size < TRAIN_SIZE.min ? TRAIN_SIZE.min : size;
+    size = size > config.TRAIN_SIZE.max ? config.TRAIN_SIZE.max :
+            size < config.TRAIN_SIZE.min ? config.TRAIN_SIZE.min : size;
     return size
 }
 
@@ -76,9 +70,9 @@ const findDataSourceByName = (name) => {
 
 const getEntityBearing = (entity) => {
     const now = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-    if(!entity.description) return;
+    if(!entity.bearing) return;
 
-    let bearing = entity.description.getValue().bearing.getValue(now);
+    let bearing = entity.bearing.getValue(now);
 
     if(!bearing) return null;
     bearing = bearing < 0 ? bearing + 360 : bearing;
@@ -180,7 +174,6 @@ const setTrainHoverHandler = (set: boolean, callback: (entity: Cesium.Entity | n
 }
 
 const setTrainClickHandler = (set: boolean, cameraMode: string, callback: (entity: Cesium.Entity | null, bearing: number | null) => void) => {
-    const map = this;
     if(set) {
         if(!entityClickHandler) {
             entityClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -227,13 +220,16 @@ export default {
             //     minimumLevel: 0,
             //     maximumLevel: 20
             // }),
-            imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-                url : 'https://a.tile.openstreetmap.org/'
+            // imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+            //     url : 'https://a.tile.openstreetmap.org/'
+            // }),
+            imageryProvider: Cesium.createWorldImagery({
+                style: Cesium.IonWorldImageryStyle.ROAD,
             }),
             shouldAnimate: true,
-            animation: false,
+            animation: true,
             fullscreenButton: false,
-            timeline: false,
+            timeline: true,
             geocoder: false, // toolbar
             homeButton: false, // toolbar
             baseLayerPicker: false, // toolbar
@@ -249,21 +245,10 @@ export default {
             showRenderLoopErrors: false,
         });
 
-        try {
-            const imageryLayer = viewer.imageryLayers.addImageryProvider(
-                new Cesium.OpenStreetMapImageryProvider({
-                    url : 'https://a.tile.openstreetmap.org/'
-                })
-            );
-            await viewer.zoomTo(imageryLayer);
-        } catch (error) {
-            console.log(error);
-        }
-
         // viewer.scene.primitives.add(
         //     new Cesium.Cesium3DTileset({
         //         // @ts-ignore
-        //         url: `https://175.197.92.213:10210/ngii-buildings/3DTiles_20230613/su/tileset.json`,
+        //         url: `http://175.197.92.213:10210/ngii-buildings/3DTiles_20230613/su/tileset.json`,
         //         customShader: new Cesium.CustomShader({
         //             lightingModel: Cesium.LightingModel.UNLIT,
         //         }),
